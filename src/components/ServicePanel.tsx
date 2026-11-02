@@ -17,6 +17,12 @@ import type {
 } from "../types";
 import type { GridSlot, PlanSize } from "../planLayout";
 import { IP_THEME, ipVars, type ArtSkin } from "../ipTheme";
+import {
+  formatDateLabel,
+  formatDisplayPercent,
+  type DateFormat,
+  type UsageDisplayMode,
+} from "../displayPreferences";
 import { cornerMascotSrc, mascotMood, mascotSrc, peakPercent } from "../mascot";
 import { RingGauge, type RingWindow } from "./RingGauge";
 import { StatusChip } from "./StatusChip";
@@ -78,11 +84,6 @@ type GaugeWindow = RingWindow & {
   segments?: { label: string; percent: number }[];
 };
 
-function formatPercent(value: number): string {
-  const pct = Math.max(0, Math.min(100, value));
-  return pct > 0 && pct < 1 ? pct.toFixed(1) : String(Math.round(pct));
-}
-
 function windowOf(label: string, percent?: number, reset?: string): GaugeWindow | undefined {
   if (typeof percent !== "number" || Number.isNaN(percent)) return undefined;
   return { label, percent, reset };
@@ -99,21 +100,27 @@ function withUniqueResets(windows: GaugeWindow[]): GaugeWindow[] {
   });
 }
 
-function shownPercent(win: GaugeWindow): string {
-  return win.unknown ? "--" : formatPercent(win.percent);
+function shownPercent(win: GaugeWindow, mode: UsageDisplayMode): string {
+  return win.unknown ? "--" : formatDisplayPercent(win.percent, mode);
 }
 
-function legendText(win: GaugeWindow, compact = false): string {
+function legendText(
+  win: GaugeWindow,
+  compact: boolean,
+  mode: UsageDisplayMode,
+  dateFormat: DateFormat,
+): string {
   const label = win.group ? `${win.group} ${win.label}` : win.label;
-  if (compact) return `${label} ${shownPercent(win)}`;
-  return win.reset
-    ? `${label} ${shownPercent(win)} RESET ${win.reset}`
-    : `${label} ${shownPercent(win)}`;
+  if (compact) return `${label} ${shownPercent(win, mode)}`;
+  const reset = formatDateLabel(win.reset, dateFormat);
+  return reset
+    ? `${label} ${shownPercent(win, mode)} RESET ${reset}`
+    : `${label} ${shownPercent(win, mode)}`;
 }
 
 /** One-line reset for compact chips: the time for 5H, the date otherwise. */
-function shortReset(win: GaugeWindow): string | undefined {
-  const [date, time] = win.reset?.trim().split(/\s+/) ?? [];
+function shortReset(win: GaugeWindow, dateFormat: DateFormat): string | undefined {
+  const [date, time] = formatDateLabel(win.reset, dateFormat)?.trim().split(/\s+/) ?? [];
   return win.label === "5H" ? (time ?? date) : date;
 }
 
@@ -291,6 +298,8 @@ function ariaFor(
   kind: Kind,
   title: string,
   service: AnyService,
+  usageDisplayMode: UsageDisplayMode,
+  dateFormat: DateFormat,
   outer?: GaugeWindow,
   inner?: GaugeWindow,
   extra: GaugeWindow[] = [],
@@ -308,8 +317,8 @@ function ariaFor(
     .filter((win): win is GaugeWindow => Boolean(win))
     .map((win) =>
       win.unknown
-        ? `${win.group ? `${win.group} ` : ""}${win.label} unknown${win.reset ? `, resets ${win.reset}` : ""}`
-        : `${win.group ? `${win.group} ` : ""}${win.label} ${formatPercent(win.percent)}%${win.reset ? `, resets ${win.reset}` : ""}`,
+        ? `${win.group ? `${win.group} ` : ""}${win.label} unknown${win.reset ? `, resets ${formatDateLabel(win.reset, dateFormat)}` : ""}`
+        : `${win.group ? `${win.group} ` : ""}${win.label} ${formatDisplayPercent(win.percent, usageDisplayMode)}% ${usageDisplayMode}${win.reset ? `, resets ${formatDateLabel(win.reset, dateFormat)}` : ""}`,
     );
   return `${title} usage: ${parts.join(", ")}`;
 }
@@ -323,6 +332,8 @@ export function ServicePanel({
   slot,
   placement,
   artSkin = "ip",
+  usageDisplayMode = "used",
+  dateFormat = "mm-dd",
   topBarCover,
 }: {
   kind: Kind;
@@ -333,6 +344,8 @@ export function ServicePanel({
   slot?: string;
   placement?: GridSlot;
   artSkin?: ArtSkin;
+  usageDisplayMode?: UsageDisplayMode;
+  dateFormat?: DateFormat;
   /** IP-skin clock/buttons floating over this card's header. */
   topBarCover?: "clock" | "controls" | "both";
 }) {
@@ -391,7 +404,16 @@ export function ServicePanel({
         : mood === "tense"
           ? "warn"
           : toneOfPeak(peak) ?? "ok";
-  const ariaLabel = ariaFor(kind, title, service, outer, inner, extra);
+  const ariaLabel = ariaFor(
+    kind,
+    title,
+    service,
+    usageDisplayMode,
+    dateFormat,
+    outer,
+    inner,
+    extra,
+  );
 
   let readout: ReactNode;
   if (kind === "deepseek") {
@@ -408,7 +430,7 @@ export function ServicePanel({
   } else if (headline != null) {
     readout = (
       <>
-        {formatPercent(headline)}
+        {formatDisplayPercent(headline, usageDisplayMode)}
         <i>%</i>
       </>
     );
@@ -502,6 +524,7 @@ export function ServicePanel({
                 mood={mood}
                 ariaLabel={ariaLabel}
                 artSkin={artSkin}
+                usageDisplayMode={usageDisplayMode}
               >
                 {portrait && (
                   <>
@@ -527,6 +550,8 @@ export function ServicePanel({
             featuredLabel="7D"
             mood={mood}
             ariaLabel={ariaLabel}
+            usageDisplayMode={usageDisplayMode}
+            dateFormat={dateFormat}
             balance={
               kind === "deepseek"
                 ? { currency: service.currency, amount: service.balance }
@@ -547,15 +572,17 @@ export function ServicePanel({
                   <>
                     <span className="legend-main">
                       {win.group ? `${win.group} ` : ""}
-                      {win.label} {shownPercent(win)}
-                      {compactLegend && shortReset(win) ? (
-                        <span className="legend-reset-inline"> {shortReset(win)}</span>
+                      {win.label} {shownPercent(win, usageDisplayMode)}
+                      {compactLegend && shortReset(win, dateFormat) ? (
+                        <span className="legend-reset-inline"> {shortReset(win, dateFormat)}</span>
                       ) : null}
                     </span>
-                    {win.reset && !compactLegend ? <span className="legend-reset">{win.reset}</span> : null}
+                    {win.reset && !compactLegend ? (
+                      <span className="legend-reset">{formatDateLabel(win.reset, dateFormat)}</span>
+                    ) : null}
                   </>
                 ) : (
-                  legendText(win)
+                  legendText(win, compactLegend, usageDisplayMode, dateFormat)
                 )}
               </span>
             ))
@@ -569,12 +596,14 @@ export function ServicePanel({
             role="status"
             aria-label={`${resetCredits} banked resets available${
               service.resetCreditsExpireLocal
-                ? `, first expires ${service.resetCreditsExpireLocal}`
+                ? `, first expires ${formatDateLabel(service.resetCreditsExpireLocal, dateFormat)}`
                 : ""
             }`}
           >
             BANKED RESETS · {resetCredits} AVAILABLE
-            {service.resetCreditsExpireLocal ? ` · FIRST EXP ${service.resetCreditsExpireLocal}` : ""}
+            {service.resetCreditsExpireLocal
+              ? ` · FIRST EXP ${formatDateLabel(service.resetCreditsExpireLocal, dateFormat)}`
+              : ""}
           </div>
         )}
         </div>
@@ -586,7 +615,7 @@ export function ServicePanel({
         </span>
         <span className="ps-rule" aria-hidden />
         {kind === "claude" && service.cooldownUntilLocal && (
-          <span className="cooldown">COOLDOWN · {service.cooldownUntilLocal}</span>
+          <span className="cooldown">COOLDOWN · {formatDateLabel(service.cooldownUntilLocal, dateFormat)}</span>
         )}
         <StatusChip
           status={service.status}

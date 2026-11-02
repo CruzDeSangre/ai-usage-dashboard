@@ -1,4 +1,11 @@
 import type { MascotMood } from "../mascot";
+import {
+  displayedPercent,
+  formatDateLabel,
+  formatDisplayPercent,
+  type DateFormat,
+  type UsageDisplayMode,
+} from "../displayPreferences";
 import type { RingWindow } from "./RingGauge";
 
 type BarWindow = RingWindow & {
@@ -9,16 +16,6 @@ type BarWindow = RingWindow & {
   /** Parts that add up to this bar, drawn as one stacked fill. */
   segments?: { label: string; percent: number }[];
 };
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(100, value));
-}
-
-function formatPercent(value: number): string {
-  const pct = clampPercent(value);
-  return pct > 0 && pct < 1 ? pct.toFixed(1) : String(Math.round(pct));
-}
 
 function toneOf(percent: number): "ok" | "warn" | "danger" {
   if (percent >= 88) return "danger";
@@ -33,6 +30,8 @@ export function UsageBars({
   skin = "ip",
   ariaLabel,
   featuredLabel,
+  usageDisplayMode = "used",
+  dateFormat = "mm-dd",
 }: {
   windows: BarWindow[];
   mood: MascotMood;
@@ -40,6 +39,8 @@ export function UsageBars({
   skin?: "ip" | "ring";
   ariaLabel?: string;
   featuredLabel?: string;
+  usageDisplayMode?: UsageDisplayMode;
+  dateFormat?: DateFormat;
 }) {
   if (balance) {
     return (
@@ -80,6 +81,7 @@ export function UsageBars({
       data-tone={peakTone}
       data-skin={skin}
       data-count={String(windows.length)}
+      data-display={usageDisplayMode}
       aria-label={ariaLabel}
     >
       {skin === "ip" && (
@@ -87,12 +89,13 @@ export function UsageBars({
           className={`ip-bars-peak${peakTone === "danger" ? " is-pulse" : ""}`}
           data-tone={peakTone}
         >
-          {peak == null ? "--" : formatPercent(peak)}
+          {peak == null ? "--" : formatDisplayPercent(peak, usageDisplayMode)}
           <i>%</i>
         </div>
       )}
       {windows.map((win, index) => {
-        const segments = win.unknown ? [] : (win.segments ?? []);
+        const segments =
+          win.unknown || usageDisplayMode === "remaining" ? [] : (win.segments ?? []);
         const heading = win.group && win.group !== windows[index - 1]?.group ? win.group : undefined;
         return (
           <div
@@ -107,7 +110,7 @@ export function UsageBars({
             <div className="ip-bar-meta">
               <span className="ip-bar-label">{win.label}</span>
               <span className="ip-bar-percent">
-                {win.unknown ? "--" : formatPercent(win.percent)}
+                {win.unknown ? "--" : formatDisplayPercent(win.percent, usageDisplayMode)}
                 <i>%</i>
               </span>
             </div>
@@ -118,13 +121,13 @@ export function UsageBars({
                     key={seg.label}
                     className="ip-bar-fill ip-bar-seg"
                     data-seg={String(segIndex)}
-                    style={{ width: `${clampPercent(seg.percent)}%` }}
+                    style={{ width: `${displayedPercent(seg.percent, "used")}%` }}
                   />
                 ))
               ) : (
                 <i
                   className="ip-bar-fill"
-                  style={{ width: `${win.unknown ? 0 : clampPercent(win.percent)}%` }}
+                  style={{ width: `${win.unknown ? 0 : displayedPercent(win.percent, usageDisplayMode)}%` }}
                 />
               )}
             </div>
@@ -132,12 +135,14 @@ export function UsageBars({
               <span className="ip-bar-segs">
                 {segments.map((seg, segIndex) => (
                   <span key={seg.label} className="ip-bar-seg-key" data-seg={String(segIndex)}>
-                    {seg.label} {formatPercent(seg.percent)}
+                    {seg.label} {formatDisplayPercent(seg.percent, "used")}
                   </span>
                 ))}
               </span>
             )}
-            <span className="ip-bar-reset">{win.reset ? `RESET ${win.reset}` : "\u00a0"}</span>
+            <span className="ip-bar-reset">
+              {win.reset ? `RESET ${formatDateLabel(win.reset, dateFormat)}` : "\u00a0"}
+            </span>
           </div>
         );
       })}

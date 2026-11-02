@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { ArtSkin } from "../ipTheme";
+import { displayedPercent, type UsageDisplayMode } from "../displayPreferences";
 import type { MascotMood } from "../mascot";
 
 export type RingWindow = {
@@ -20,11 +21,6 @@ const START_ROTATE = 135;
 
 function circumference(radius: number): number {
   return 2 * Math.PI * radius;
-}
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(100, value));
 }
 
 function toneOf(percent: number | undefined): "ok" | "warn" | "danger" | "idle" {
@@ -52,6 +48,7 @@ function RingArc({
   segments,
   ready,
   showCap,
+  usageDisplayMode,
 }: {
   radius: number;
   trackWidth: number;
@@ -60,24 +57,27 @@ function RingArc({
   segments?: RingWindow["segments"];
   ready: boolean;
   showCap: boolean;
+  usageDisplayMode: UsageDisplayMode;
 }) {
   const circ = circumference(radius);
   const arc = circ * ARC_FRACTION;
-  const used = (clampPercent(percent) / 100) * arc;
+  const shown = displayedPercent(percent, usageDisplayMode);
+  const fill = (shown / 100) * arc;
+  const visibleSegments = usageDisplayMode === "used" ? segments : undefined;
   // A shared pool is one arc split into consecutive product parts; any
   // remainder the breakdown does not cover keeps the plain fill colour.
   const parts: { key: string; seg?: number; start: number; length: number }[] = [];
-  if (segments && segments.length > 0) {
+  if (visibleSegments && visibleSegments.length > 0) {
     let start = 0;
-    segments.forEach((segment, index) => {
-      const length = Math.min((clampPercent(segment.percent) / 100) * arc, used - start);
+    visibleSegments.forEach((segment, index) => {
+      const length = Math.min((displayedPercent(segment.percent, "used") / 100) * arc, fill - start);
       if (length <= 0) return;
       parts.push({ key: segment.label, seg: index, start, length });
       start += length;
     });
-    if (used - start > 0.5) parts.push({ key: "rest", start, length: used - start });
+    if (fill - start > 0.5) parts.push({ key: "rest", start, length: fill - start });
   }
-  const end = polar(radius, 225 - 2.7 * clampPercent(percent));
+  const end = polar(radius, 225 - 2.7 * shown);
   const tone = toneOf(percent);
   return (
     <g className={`gauge-arc gauge-arc-${tone}`}>
@@ -121,11 +121,11 @@ function RingArc({
           stroke="currentColor"
           strokeWidth={fillWidth}
           strokeLinecap="butt"
-          strokeDasharray={`${ready ? used : 0} ${circ}`}
+          strokeDasharray={`${ready ? fill : 0} ${circ}`}
           transform={`rotate(${START_ROTATE} ${CX} ${CY})`}
         />
       )}
-      {showCap && percent > 0 && (
+      {showCap && shown > 0 && (
         <circle className="gauge-cap" cx={end.x} cy={end.y} r={3} />
       )}
     </g>
@@ -141,6 +141,7 @@ export function RingGauge({
   children,
   ariaLabel,
   artSkin = "ip",
+  usageDisplayMode = "used",
 }: {
   outer?: RingWindow;
   inner?: RingWindow;
@@ -151,6 +152,7 @@ export function RingGauge({
   children?: ReactNode;
   ariaLabel: string;
   artSkin?: ArtSkin;
+  usageDisplayMode?: UsageDisplayMode;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [diameter, setDiameter] = useState(200);
@@ -227,6 +229,7 @@ export function RingGauge({
             segments={shownOuter.segments}
             ready={ready}
             showCap={!ip}
+            usageDisplayMode={usageDisplayMode}
           />
         ) : (
           <circle
@@ -249,6 +252,7 @@ export function RingGauge({
             percent={shownInner.percent}
             ready={ready}
             showCap={!ip}
+            usageDisplayMode={usageDisplayMode}
           />
         )}
       </svg>

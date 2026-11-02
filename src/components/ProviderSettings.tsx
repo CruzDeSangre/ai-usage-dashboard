@@ -1,6 +1,7 @@
 import { Check, KeyRound, Save, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { ArtSkin } from "../ipTheme";
+import type { DateFormat, UsageDisplayMode } from "../displayPreferences";
 import type { EnabledProviders, WindowMode } from "../types";
 
 // Grok and Cursor are one X toggle: on The X Subscription they share one
@@ -26,11 +27,23 @@ const ART_SKINS: Array<{ value: ArtSkin; label: string; code: string }> = [
   { value: "ring", label: "CLASSIC EVA", code: "EVA" },
 ];
 
+const USAGE_DISPLAY_MODES: Array<{ value: UsageDisplayMode; label: string; code: string }> = [
+  { value: "used", label: "USED", code: "USE" },
+  { value: "remaining", label: "REMAINING", code: "LEFT" },
+];
+
+const DATE_FORMATS: Array<{ value: DateFormat; label: string; code: string }> = [
+  { value: "mm-dd", label: "MM-DD", code: "MD" },
+  { value: "dd-mm", label: "DD-MM", code: "DM" },
+];
+
 export function ProviderSettings({
   value,
   windowMode,
   lowPowerMode,
   artSkin,
+  usageDisplayMode,
+  dateFormat,
   judgeDemo,
   deepseekKeySaved,
   onClose,
@@ -41,6 +54,8 @@ export function ProviderSettings({
   windowMode: WindowMode;
   lowPowerMode: boolean;
   artSkin: ArtSkin;
+  usageDisplayMode: UsageDisplayMode;
+  dateFormat: DateFormat;
   judgeDemo: boolean;
   /** Config holds a key (an environment key cannot be cleared here). */
   deepseekKeySaved: boolean;
@@ -52,6 +67,8 @@ export function ProviderSettings({
     lowPowerMode?: boolean,
     artSkin?: ArtSkin,
     clearDeepseekApiKey?: boolean,
+    usageDisplayMode?: UsageDisplayMode,
+    dateFormat?: DateFormat,
   ) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(value);
@@ -61,6 +78,10 @@ export function ProviderSettings({
   const [lowPowerTouched, setLowPowerTouched] = useState(false);
   const [draftArtSkin, setDraftArtSkin] = useState<ArtSkin>(artSkin);
   const [artSkinTouched, setArtSkinTouched] = useState(false);
+  const [draftUsageDisplayMode, setDraftUsageDisplayMode] = useState<UsageDisplayMode>(usageDisplayMode);
+  const [usageDisplayModeTouched, setUsageDisplayModeTouched] = useState(false);
+  const [draftDateFormat, setDraftDateFormat] = useState<DateFormat>(dateFormat);
+  const [dateFormatTouched, setDateFormatTouched] = useState(false);
   const [deepseekApiKey, setDeepseekApiKey] = useState("");
   const [clearDeepseekKey, setClearDeepseekKey] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -98,6 +119,8 @@ export function ProviderSettings({
         windowModeTouched ||
         lowPowerTouched ||
         artSkinTouched ||
+        usageDisplayModeTouched ||
+        dateFormatTouched ||
         keyToSave ||
         clearDeepseekKey
       ) {
@@ -108,6 +131,8 @@ export function ProviderSettings({
           lowPowerTouched ? draftLowPower : undefined,
           artSkinTouched ? draftArtSkin : undefined,
           clearDeepseekKey || undefined,
+          usageDisplayModeTouched ? draftUsageDisplayMode : undefined,
+          dateFormatTouched ? draftDateFormat : undefined,
         );
       }
       setDeepseekApiKey("");
@@ -228,6 +253,64 @@ export function ProviderSettings({
                   </span>
                   <span className="window-mode-name">{skin.label}</span>
                   <span className="window-mode-code">{skin.code}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="window-mode-options" disabled={saving}>
+            <legend className="settings-section-label">USAGE DISPLAY</legend>
+            <div className="window-mode-grid" role="radiogroup" aria-label="Usage display">
+              {USAGE_DISPLAY_MODES.map((mode) => (
+                <label
+                  className={`window-mode-option${draftUsageDisplayMode === mode.value ? " is-selected" : ""}`}
+                  key={mode.value}
+                >
+                  <input
+                    type="radio"
+                    name="usageDisplayMode"
+                    value={mode.value}
+                    checked={draftUsageDisplayMode === mode.value}
+                    onClick={() => setUsageDisplayModeTouched(true)}
+                    onChange={() => {
+                      setDraftUsageDisplayMode(mode.value);
+                      setUsageDisplayModeTouched(true);
+                    }}
+                  />
+                  <span className="window-mode-check" aria-hidden>
+                    <Check size={14} strokeWidth={3} />
+                  </span>
+                  <span className="window-mode-name">{mode.label}</span>
+                  <span className="window-mode-code">{mode.code}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="window-mode-options" disabled={saving}>
+            <legend className="settings-section-label">DATE FORMAT</legend>
+            <div className="window-mode-grid" role="radiogroup" aria-label="Date format">
+              {DATE_FORMATS.map((format) => (
+                <label
+                  className={`window-mode-option${draftDateFormat === format.value ? " is-selected" : ""}`}
+                  key={format.value}
+                >
+                  <input
+                    type="radio"
+                    name="dateFormat"
+                    value={format.value}
+                    checked={draftDateFormat === format.value}
+                    onClick={() => setDateFormatTouched(true)}
+                    onChange={() => {
+                      setDraftDateFormat(format.value);
+                      setDateFormatTouched(true);
+                    }}
+                  />
+                  <span className="window-mode-check" aria-hidden>
+                    <Check size={14} strokeWidth={3} />
+                  </span>
+                  <span className="window-mode-name">{format.label}</span>
+                  <span className="window-mode-code">{format.code}</span>
                 </label>
               ))}
             </div>
