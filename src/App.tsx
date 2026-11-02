@@ -16,6 +16,12 @@ import { TelemetryBar } from "./components/TelemetryBar";
 import { ProviderSettings } from "./components/ProviderSettings";
 import { normalizeArtSkin, type ArtSkin } from "./ipTheme";
 import {
+  loadDisplayPreferences,
+  saveDisplayPreferences,
+  type DateFormat,
+  type UsageDisplayMode,
+} from "./displayPreferences";
+import {
   computePanelLayout,
   enabledProviderList,
   shownProviders,
@@ -81,6 +87,7 @@ export default function App() {
   const [launchMode, setLaunchMode] = useState<LaunchMode>("normal");
   const [lowPowerMode, setLowPowerMode] = useState(false);
   const [artSkin, setArtSkin] = useState<ArtSkin>("ip");
+  const [displayPreferences, setDisplayPreferences] = useState(loadDisplayPreferences);
   const [deepseekKeySaved, setDeepseekKeySaved] = useState(false);
   const [pageVisible, setPageVisible] = useState(() => !document.hidden);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -385,35 +392,58 @@ export default function App() {
       nextLowPowerMode?: boolean,
       nextArtSkin?: ArtSkin,
       clearDeepseekApiKey?: boolean,
+      nextUsageDisplayMode?: UsageDisplayMode,
+      nextDateFormat?: DateFormat,
     ) => {
       try {
-        const args: {
-          enabledProviders: EnabledProviders | null;
-          windowMode: WindowMode | null;
-          deepseekApiKey: string | null;
-          lowPowerMode?: boolean;
-          artSkin?: ArtSkin;
-          clearDeepseekApiKey?: boolean;
-        } = {
-          enabledProviders: enabledProviders ?? null,
-          windowMode: nextWindowMode ?? null,
-          deepseekApiKey: deepseekApiKey ?? null,
-        };
-        if (nextLowPowerMode !== undefined) args.lowPowerMode = nextLowPowerMode;
-        if (nextArtSkin !== undefined) args.artSkin = nextArtSkin;
-        if (clearDeepseekApiKey) args.clearDeepseekApiKey = true;
-        const saved = await invoke<{
-          enabledProviders: EnabledProviders;
-          windowMode: WindowMode;
-          lowPowerMode: boolean;
-          artSkin: string;
-          deepseekKeySaved: boolean;
-        }>("save_display_settings", args);
-        setSummary((current) => ({ ...current, enabledProviders: saved.enabledProviders }));
-        setLaunchMode(saved.windowMode);
-        setLowPowerMode(saved.lowPowerMode);
-        setArtSkin(normalizeArtSkin(saved.artSkin));
-        setDeepseekKeySaved(saved.deepseekKeySaved);
+        const backendChanged =
+          enabledProviders !== undefined ||
+          nextWindowMode !== undefined ||
+          deepseekApiKey !== undefined ||
+          nextLowPowerMode !== undefined ||
+          nextArtSkin !== undefined ||
+          Boolean(clearDeepseekApiKey);
+
+        if (backendChanged) {
+          const args: {
+            enabledProviders: EnabledProviders | null;
+            windowMode: WindowMode | null;
+            deepseekApiKey: string | null;
+            lowPowerMode?: boolean;
+            artSkin?: ArtSkin;
+            clearDeepseekApiKey?: boolean;
+          } = {
+            enabledProviders: enabledProviders ?? null,
+            windowMode: nextWindowMode ?? null,
+            deepseekApiKey: deepseekApiKey ?? null,
+          };
+          if (nextLowPowerMode !== undefined) args.lowPowerMode = nextLowPowerMode;
+          if (nextArtSkin !== undefined) args.artSkin = nextArtSkin;
+          if (clearDeepseekApiKey) args.clearDeepseekApiKey = true;
+          const saved = await invoke<{
+            enabledProviders: EnabledProviders;
+            windowMode: WindowMode;
+            lowPowerMode: boolean;
+            artSkin: string;
+            deepseekKeySaved: boolean;
+          }>("save_display_settings", args);
+          setSummary((current) => ({ ...current, enabledProviders: saved.enabledProviders }));
+          setLaunchMode(saved.windowMode);
+          setLowPowerMode(saved.lowPowerMode);
+          setArtSkin(normalizeArtSkin(saved.artSkin));
+          setDeepseekKeySaved(saved.deepseekKeySaved);
+        }
+
+        if (nextUsageDisplayMode !== undefined || nextDateFormat !== undefined) {
+          setDisplayPreferences((current) => {
+            const next = {
+              usageDisplayMode: nextUsageDisplayMode ?? current.usageDisplayMode,
+              dateFormat: nextDateFormat ?? current.dateFormat,
+            };
+            saveDisplayPreferences(next);
+            return next;
+          });
+        }
       } catch (err) {
         try {
           const actualMode = await invoke<string>("launch_mode");
@@ -470,6 +500,8 @@ export default function App() {
               topBarCover={panelLayout.covers[kind]}
               placement={panelLayout.placements[kind]}
               artSkin={artSkin}
+              usageDisplayMode={displayPreferences.usageDisplayMode}
+              dateFormat={displayPreferences.dateFormat}
             />
           ))}
           {enabledCount === 0 && (
@@ -497,6 +529,8 @@ export default function App() {
           windowMode={effectiveWindowMode}
           lowPowerMode={lowPowerMode}
           artSkin={artSkin}
+          usageDisplayMode={displayPreferences.usageDisplayMode}
+          dateFormat={displayPreferences.dateFormat}
           judgeDemo={judgeDemo}
           deepseekKeySaved={deepseekKeySaved}
           onClose={closeSettings}
