@@ -12,6 +12,7 @@ pub struct EnabledProviders {
     pub grok: bool,
     pub cursor: bool,
     pub antigravity: bool,
+    pub mistral: bool,
     pub opencodego: bool,
 }
 
@@ -32,6 +33,7 @@ impl Default for EnabledProviders {
             grok: false,
             cursor: false,
             antigravity: false,
+            mistral: false,
             opencodego: false,
         }
     }
@@ -46,6 +48,7 @@ impl EnabledProviders {
             self.grok,
             self.cursor,
             self.antigravity,
+            self.mistral,
             self.opencodego,
         ]
         .into_iter()
@@ -320,6 +323,38 @@ impl Default for AntigravityService {
     }
 }
 
+/// Mistral Vibe monthly allowance from the same public billing endpoint used by
+/// the official Vibe CLI. Credentials never cross the IPC boundary.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MistralService {
+    pub status: String,
+    pub from_cache: bool,
+    pub data_may_be_stale: bool,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub plan: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub monthly_percent: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub monthly_reset_local: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub payg_enabled: Option<bool>,
+}
+
+impl Default for MistralService {
+    fn default() -> Self {
+        Self {
+            status: "AWAITING DATA".into(),
+            from_cache: false,
+            data_may_be_stale: false,
+            plan: None,
+            monthly_percent: None,
+            monthly_reset_local: None,
+            payg_enabled: None,
+        }
+    }
+}
+
 /// OpenCode Go subscription windows from the Zen Go usage API. The API does
 /// not say whether the seat is Go or Go Plus, and limits are per model, so
 /// only server-reported percentages are shown.
@@ -368,6 +403,8 @@ pub struct Services {
     pub grok: GrokService,
     pub cursor: CursorService,
     pub antigravity: AntigravityService,
+    #[serde(default)]
+    pub mistral: MistralService,
     #[serde(default)]
     pub opencodego: OpenCodeGoService,
 }
