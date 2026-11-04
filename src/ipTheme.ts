@@ -69,6 +69,14 @@ export const IP_THEME: Record<ProviderKind, IpTheme> = {
     onField: "#121212",
     emerge: "right",
   },
+  mistral: {
+    field: "#FF7000",
+    ipA: "#2B1400",
+    ipB: "#FFE3C7",
+    ringOk: "#FFB36A",
+    onField: "#121212",
+    emerge: "right",
+  },
 };
 
 export function normalizeArtSkin(value: string | undefined | null): ArtSkin {
