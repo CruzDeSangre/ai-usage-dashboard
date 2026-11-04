@@ -15,7 +15,8 @@ export interface EnabledProviders {
   grok: boolean;
   cursor: boolean;
   antigravity: boolean;
-  mistral: boolean;
+  /** Absent in configs saved before Mistral Vibe support. */
+  mistral?: boolean;
   /** Absent in configs saved before OpenCode Go support. */
   opencodego?: boolean;
 }
@@ -136,7 +137,7 @@ export interface Services {
   grok: GrokService;
   cursor: CursorService;
   antigravity: AntigravityService;
-  mistral: MistralService;
+  mistral?: MistralService;
   opencodego?: OpenCodeGoService;
 }
 
