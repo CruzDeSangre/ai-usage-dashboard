@@ -8,6 +8,7 @@ export const PROVIDER_ORDER = [
   "cursor",
   "antigravity",
   "opencodego",
+  "mistral",
 ] as const;
 
 export type ProviderKind = (typeof PROVIDER_ORDER)[number];
@@ -64,6 +65,7 @@ export function enabledProviderList(enabled: EnabledProviders, services: Service
       "codex",
       "claude",
       "antigravity",
+      "mistral",
       "grok",
       "cursor",
       "opencodego",
@@ -78,7 +80,7 @@ export function livePlanOf(kind: ProviderKind, services: Services): string | und
   if (kind === "claude" || kind === "deepseek" || kind === "opencodego") {
     return undefined;
   }
-  const plan = services[kind].plan;
+  const plan = services[kind]?.plan;
   return typeof plan === "string" ? plan : undefined;
 }
 

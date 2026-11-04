@@ -46,6 +46,7 @@ const EMPTY: UsageSummary = {
     grok: false,
     cursor: false,
     antigravity: false,
+    mistral: false,
     opencodego: false,
   },
   services: {
@@ -55,6 +56,7 @@ const EMPTY: UsageSummary = {
     grok: { status: "AWAITING DATA", fromCache: false, dataMayBeStale: false },
     cursor: { status: "AWAITING DATA", fromCache: false, dataMayBeStale: false },
     antigravity: { status: "AWAITING DATA", fromCache: false, dataMayBeStale: false },
+    mistral: { status: "AWAITING DATA", fromCache: false, dataMayBeStale: false },
     opencodego: { status: "AWAITING DATA", fromCache: false, dataMayBeStale: false },
   },
 };
@@ -67,6 +69,7 @@ const PANEL_META: Record<ProviderKind, { title: string; code: string }> = {
   cursor: { title: "CURSOR", code: "SYS-05" },
   antigravity: { title: "ANTIGRAVITY", code: "SYS-06" },
   opencodego: { title: "OPENCODE GO", code: "SYS-07" },
+  mistral: { title: "MISTRAL VIBE", code: "SYS-08" },
 };
 
 const REFRESH_TIMEOUT_MS = 180_000;

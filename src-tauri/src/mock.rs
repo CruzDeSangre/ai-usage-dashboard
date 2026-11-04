@@ -113,6 +113,7 @@ fn summary_from_payloads(
             grok,
             cursor,
             antigravity,
+            mistral: Default::default(),
             opencodego,
         },
         EnabledProviders {
@@ -122,6 +123,7 @@ fn summary_from_payloads(
             grok: mode == "failures",
             cursor: mode == "failures",
             antigravity: mode == "failures",
+            mistral: false,
             opencodego: mode == "failures",
         },
         enabled,
@@ -144,6 +146,7 @@ fn error_summary(message: &str, enabled: EnabledProviders) -> UsageSummary {
     services.grok.status = message.into();
     services.cursor.status = message.into();
     services.antigravity.status = message.into();
+    services.mistral.status = message.into();
     services.opencodego.status = message.into();
     services.codex.data_may_be_stale = true;
     services.claude.data_may_be_stale = true;
@@ -151,6 +154,7 @@ fn error_summary(message: &str, enabled: EnabledProviders) -> UsageSummary {
     services.grok.data_may_be_stale = true;
     services.cursor.data_may_be_stale = true;
     services.antigravity.data_may_be_stale = true;
+    services.mistral.data_may_be_stale = true;
     services.opencodego.data_may_be_stale = true;
 
     UsageSummary {
@@ -270,6 +274,7 @@ mod tests {
                 grok: false,
                 cursor: false,
                 antigravity: false,
+                mistral: false,
                 opencodego: false,
             },
         )

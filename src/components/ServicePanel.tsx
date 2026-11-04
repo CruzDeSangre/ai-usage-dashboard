@@ -13,6 +13,7 @@ import type {
   CursorService,
   DeepSeekService,
   GrokService,
+  MistralService,
   OpenCodeGoService,
 } from "../types";
 import type { GridSlot, PlanSize } from "../planLayout";
@@ -29,7 +30,7 @@ import { StatusChip } from "./StatusChip";
 import { CornerBrackets } from "./CornerBrackets";
 import { UsageBars } from "./UsageBars";
 
-type Kind = "codex" | "claude" | "deepseek" | "grok" | "cursor" | "antigravity" | "opencodego";
+type Kind = "codex" | "claude" | "deepseek" | "grok" | "cursor" | "antigravity" | "opencodego" | "mistral";
 
 type AnyService = (
   | CodexService
@@ -38,6 +39,7 @@ type AnyService = (
   | GrokService
   | CursorService
   | AntigravityService
+  | MistralService
   | OpenCodeGoService
 ) & {
   plan?: string;
@@ -152,6 +154,11 @@ function windowsFor(kind: Kind, service: AnyService): {
   bars?: GaugeWindow[];
 } {
   if (kind === "deepseek") return { extra: [] };
+
+  if (kind === "mistral") {
+    const month = windowOf("MONTH", service.monthlyPercent, service.monthlyResetLocal);
+    return { outer: month, extra: [] };
+  }
 
   if (kind === "grok") {
     const period = windowOf(service.periodLabel ?? "PERIOD", service.usagePercent, service.usageResetLocal);
@@ -393,7 +400,8 @@ export function ServicePanel({
       kind === "claude" ||
       kind === "grok" ||
       kind === "cursor" ||
-      kind === "antigravity") &&
+      kind === "antigravity" ||
+      kind === "mistral") &&
     Boolean(planLabel) &&
     !(artSkin === "ip" && planLabel?.trim().toUpperCase() === title.toUpperCase());
   const panelTone =

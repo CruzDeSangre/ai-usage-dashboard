@@ -13,6 +13,7 @@ const PROVIDERS: Array<{ id: string; keys: Array<keyof EnabledProviders>; label:
   { id: "x", keys: ["grok", "cursor"], label: "X · GROK + CURSOR", code: "SYS-04" },
   { id: "antigravity", keys: ["antigravity"], label: "ANTIGRAVITY", code: "SYS-06" },
   { id: "opencodego", keys: ["opencodego"], label: "OPENCODE GO", code: "SYS-07" },
+  { id: "mistral", keys: ["mistral"], label: "MISTRAL VIBE", code: "SYS-08" },
 ];
 
 const PROVIDER_KEYS = PROVIDERS.flatMap(({ keys }) => keys);

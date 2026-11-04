@@ -167,6 +167,7 @@ const DEFAULT_CONFIG_JSON: &str = r#"{
     "grok": false,
     "cursor": false,
     "antigravity": false,
+    "mistral": false,
     "opencodego": false
   },
   "deepSeekApiKey": "",
@@ -277,6 +278,7 @@ mod tests {
         assert!(!config.enabled_providers.grok);
         assert!(!config.enabled_providers.cursor);
         assert!(!config.enabled_providers.antigravity);
+        assert!(!config.enabled_providers.mistral);
         assert_eq!(
             config.refresh_interval_minutes,
             DEFAULT_REFRESH_INTERVAL_MINUTES
@@ -336,6 +338,7 @@ mod tests {
             grok: true,
             cursor: false,
             antigravity: false,
+            mistral: false,
             opencodego: false,
         };
 
