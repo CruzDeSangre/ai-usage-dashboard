@@ -7,6 +7,7 @@ pub mod codex;
 pub mod cursor;
 pub mod deepseek;
 pub mod grok;
+pub mod mistral;
 pub mod opencodego;
 
 use crate::cache::CacheState;
@@ -240,7 +241,7 @@ fn retry_deadline(retry_after: Option<u64>) -> DateTime<Utc> {
 pub fn summary_from_cache(cache: &CacheState, enabled: EnabledProviders) -> UsageSummary {
     use crate::models::{
         AntigravityService, ClaudeService, CodexService, CursorService, DeepSeekService,
-        GrokService, OpenCodeGoService,
+        GrokService, MistralService, OpenCodeGoService,
     };
 
     let cooldown_label = enabled
@@ -285,6 +286,11 @@ pub fn summary_from_cache(cache: &CacheState, enabled: EnabledProviders) -> Usag
         } else {
             AntigravityService::default()
         };
+    let mistral: MistralService = if enabled.mistral && cache.get("mistral").is_some() {
+        cached_or_cooling(cache, "mistral")
+    } else {
+        MistralService::default()
+    };
     let opencodego: OpenCodeGoService = if enabled.opencodego && cache.get("opencodego").is_some() {
         cached_or_cooling(cache, "opencodego")
     } else {
@@ -297,6 +303,7 @@ pub fn summary_from_cache(cache: &CacheState, enabled: EnabledProviders) -> Usag
         || (enabled.grok && cache.get("grok").is_some())
         || (enabled.cursor && cache.get("cursor").is_some())
         || (enabled.antigravity && cache.get("antigravity").is_some())
+        || (enabled.mistral && cache.get("mistral").is_some())
         || (enabled.opencodego && cache.get("opencodego").is_some());
 
     UsageSummary {
@@ -313,6 +320,7 @@ pub fn summary_from_cache(cache: &CacheState, enabled: EnabledProviders) -> Usag
             grok,
             cursor,
             antigravity,
+            mistral,
             opencodego,
         },
     }
@@ -366,6 +374,11 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
             } else {
                 AntigravityService::default()
             };
+            let mistral = if enabled.mistral {
+                cached_service::<MistralService>(cache, "mistral", MSG_FAILED, None)
+            } else {
+                MistralService::default()
+            };
             let opencodego = if enabled.opencodego {
                 cached_service::<OpenCodeGoService>(cache, "opencodego", MSG_FAILED, None)
             } else {
@@ -400,6 +413,8 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
         enabled.cursor && !cursor_folded && cache.provider_cooldown_active("cursor").is_none();
     let fetch_antigravity =
         enabled.antigravity && cache.provider_cooldown_active("antigravity").is_none();
+    let fetch_mistral =
+        enabled.mistral && cache.provider_cooldown_active("mistral").is_none();
     let fetch_opencodego =
         enabled.opencodego && cache.provider_cooldown_active("opencodego").is_none();
 
@@ -433,6 +448,11 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
         let client = client.clone();
         tokio::spawn(async move { antigravity::fetch(&config, &client).await })
     });
+    let mistral_task = fetch_mistral.then(|| {
+        let config = config.clone();
+        let client = client.clone();
+        tokio::spawn(async move { mistral::fetch(&config, &client).await })
+    });
     let opencodego_task = fetch_opencodego.then(|| {
         let config = config.clone();
         let client = client.clone();
@@ -445,6 +465,7 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
     let grok_res = join_optional_fetch(grok_task).await;
     let cursor_res = join_optional_fetch(cursor_task).await;
     let antigravity_res = join_optional_fetch(antigravity_task).await;
+    let mistral_res = join_optional_fetch(mistral_task).await;
     let opencodego_res = join_optional_fetch(opencodego_task).await;
 
     let (claude, claude_cached) = if !enabled.claude {
@@ -509,6 +530,13 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
         fetch_antigravity,
         antigravity_res,
     );
+    let (mistral, mistral_cached) = apply_standard_fetch(
+        cache,
+        "mistral",
+        enabled.mistral,
+        fetch_mistral,
+        mistral_res,
+    );
     let (opencodego, opencodego_cached) = apply_standard_fetch(
         cache,
         "opencodego",
@@ -535,6 +563,7 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
             grok: grok_cached,
             cursor: cursor_cached,
             antigravity: antigravity_cached,
+            mistral: mistral_cached,
             opencodego: opencodego_cached,
         },
         enabled,
@@ -597,6 +626,11 @@ pub(crate) fn assemble(
             fallbacks.antigravity,
         ),
         (
+            shown.mistral,
+            &services.mistral.status,
+            fallbacks.mistral,
+        ),
+        (
             shown.opencodego,
             &services.opencodego.status,
             fallbacks.opencodego,
@@ -639,7 +673,7 @@ mod tests {
     use crate::config::Config;
     use crate::models::{
         AntigravityService, ClaudeService, CodexService, CursorService, DeepSeekService,
-        EnabledProviders, GrokService, Services,
+        EnabledProviders, GrokService, MistralService, Services,
     };
     use chrono::{DateTime, Utc};
 
@@ -650,12 +684,14 @@ mod tests {
         let mut grok = GrokService::default();
         let mut cursor = CursorService::default();
         let mut antigravity = AntigravityService::default();
+        let mut mistral = MistralService::default();
         claude.status = "NOMINAL".into();
         codex.status = "NOMINAL".into();
         deepseek.status = "NOMINAL".into();
         grok.status = "NOMINAL".into();
         cursor.status = "NOMINAL".into();
         antigravity.status = "NOMINAL".into();
+        mistral.status = "NOMINAL".into();
         let opencodego = crate::models::OpenCodeGoService {
             status: "NOMINAL".into(),
             ..Default::default()
@@ -685,6 +721,7 @@ mod tests {
                 grok: false,
                 cursor: false,
                 antigravity: false,
+                mistral: false,
                 opencodego: false,
             },
             EnabledProviders::default(),
@@ -706,6 +743,7 @@ mod tests {
                 grok: false,
                 cursor: false,
                 antigravity: false,
+                mistral: false,
                 opencodego: false,
             },
             EnabledProviders::default(),
@@ -725,6 +763,7 @@ mod tests {
             grok: false,
             cursor: false,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
 
@@ -735,6 +774,7 @@ mod tests {
             grok: false,
             cursor: false,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
         let summary = assemble(services, fallbacks, enabled);
@@ -753,6 +793,7 @@ mod tests {
             grok: true,
             cursor: false,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
 
@@ -763,6 +804,7 @@ mod tests {
             grok: true,
             cursor: false,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
         let summary = assemble(services, fallbacks, enabled);
@@ -841,6 +883,7 @@ mod tests {
             grok: false,
             cursor: true,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
         let no_fallbacks = EnabledProviders {
@@ -870,6 +913,7 @@ mod tests {
             grok: false,
             cursor: true,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
 
@@ -880,6 +924,7 @@ mod tests {
             grok: false,
             cursor: true,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
         let summary = assemble(services, fallbacks, enabled);
@@ -911,6 +956,7 @@ mod tests {
             grok: true,
             cursor: false,
             antigravity: false,
+                mistral: false,
             opencodego: false,
         };
         let restored = super::summary_from_cache(&cache, enabled);
@@ -946,6 +992,7 @@ mod tests {
                 grok: false,
                 cursor: false,
                 antigravity: false,
+                mistral: false,
                 opencodego: false,
             },
             ..Config::default()
