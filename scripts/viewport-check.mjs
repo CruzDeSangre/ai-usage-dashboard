@@ -736,7 +736,7 @@ async function checkProviderSelection(browser) {
   await page.locator(".tm-settings").click();
   await page.locator(".settings-dialog").waitFor();
   // Grok and Cursor share one X toggle.
-  assert.equal(await page.locator(".provider-grid .provider-option").count(), 6);
+  assert.equal(await page.locator(".provider-grid .provider-option").count(), 7);
   assert.equal(await page.locator(".provider-option.provider-grok, .provider-option.provider-cursor").count(), 0);
   assert.equal(await page.locator('.provider-option input[type="checkbox"]:checked').count(), 4);
   assert.equal(await page.locator('.window-mode-option input[value="normal"]').isChecked(), true);
@@ -2111,7 +2111,7 @@ async function checkLowPowerMode(browser) {
     assert.ok(dialogBox, `${viewport.width}x${viewport.height} settings dialog missing`);
     assert.ok(dialogBox.x >= 0 && dialogBox.x + dialogBox.width <= viewport.width + 1);
     assert.ok(dialogBox.y >= 0 && dialogBox.y + dialogBox.height <= viewport.height + 1);
-    assert.equal(await compactPage.locator(".provider-grid .provider-option").count(), 6);
+    assert.equal(await compactPage.locator(".provider-grid .provider-option").count(), 7);
     await compactPage.locator(".provider-option.provider-x").scrollIntoViewIfNeeded();
     await compactPage.locator(".provider-option.provider-opencodego").scrollIntoViewIfNeeded();
     assert.equal(await compactPage.locator(".provider-option.provider-x").isVisible(), true);
