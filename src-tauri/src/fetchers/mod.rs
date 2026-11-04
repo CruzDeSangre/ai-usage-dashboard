@@ -766,7 +766,7 @@ mod tests {
             grok: false,
             cursor: false,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
 
@@ -777,7 +777,7 @@ mod tests {
             grok: false,
             cursor: false,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
         let summary = assemble(services, fallbacks, enabled);
@@ -796,7 +796,7 @@ mod tests {
             grok: true,
             cursor: false,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
 
@@ -807,7 +807,7 @@ mod tests {
             grok: true,
             cursor: false,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
         let summary = assemble(services, fallbacks, enabled);
@@ -886,7 +886,7 @@ mod tests {
             grok: false,
             cursor: true,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
         let no_fallbacks = EnabledProviders {
@@ -916,7 +916,7 @@ mod tests {
             grok: false,
             cursor: true,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
 
@@ -927,7 +927,7 @@ mod tests {
             grok: false,
             cursor: true,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
         let summary = assemble(services, fallbacks, enabled);
@@ -959,7 +959,7 @@ mod tests {
             grok: true,
             cursor: false,
             antigravity: false,
-                mistral: false,
+            mistral: false,
             opencodego: false,
         };
         let restored = super::summary_from_cache(&cache, enabled);
