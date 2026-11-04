@@ -15,6 +15,7 @@ export interface EnabledProviders {
   grok: boolean;
   cursor: boolean;
   antigravity: boolean;
+  mistral: boolean;
   /** Absent in configs saved before OpenCode Go support. */
   opencodego?: boolean;
 }
@@ -106,6 +107,16 @@ export interface AntigravityService {
   argonSevenDayResetLocal?: string;
 }
 
+export interface MistralService {
+  status: string;
+  fromCache: boolean;
+  dataMayBeStale: boolean;
+  plan?: string;
+  monthlyPercent?: number;
+  monthlyResetLocal?: string;
+  paygEnabled?: boolean;
+}
+
 export interface OpenCodeGoService {
   status: string;
   fromCache: boolean;
@@ -125,6 +136,7 @@ export interface Services {
   grok: GrokService;
   cursor: CursorService;
   antigravity: AntigravityService;
+  mistral: MistralService;
   opencodego?: OpenCodeGoService;
 }
 
