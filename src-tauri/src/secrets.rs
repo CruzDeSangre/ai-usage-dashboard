@@ -44,7 +44,9 @@ fn mistral_key_from_env_file() -> Option<String> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        let (name, value) = line.split_once('=')?;
+        let Some((name, value)) = line.split_once('=') else {
+            continue;
+        };
         if name.trim() != "MISTRAL_API_KEY" {
             continue;
         }
@@ -129,7 +131,8 @@ fn read_windows_generic_credential(target: &str) -> Option<String> {
 
     // python-keyring writes Windows vault passwords as UTF-16. Keep UTF-8 as a
     // compatibility fallback for credentials written by other clients.
-    if bytes.len() % 2 == 0 {
+    let looks_utf16 = bytes.len() % 2 == 0 && bytes.chunks_exact(2).any(|pair| pair[1] == 0);
+    if looks_utf16 {
         let units: Vec<u16> = bytes
             .chunks_exact(2)
             .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
