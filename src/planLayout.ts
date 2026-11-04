@@ -80,7 +80,7 @@ export function livePlanOf(kind: ProviderKind, services: Services): string | und
   if (kind === "claude" || kind === "deepseek" || kind === "opencodego") {
     return undefined;
   }
-  const plan = services[kind].plan;
+  const plan = services[kind]?.plan;
   return typeof plan === "string" ? plan : undefined;
 }
 
