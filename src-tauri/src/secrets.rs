@@ -21,7 +21,6 @@ pub fn deepseek_key(config: &Config) -> Option<String> {
     None
 }
 
-
 /// Resolve the Mistral credential without exposing it to the renderer.
 pub fn mistral_key() -> Option<String> {
     if let Ok(value) = std::env::var("MISTRAL_API_KEY") {
@@ -58,15 +57,14 @@ fn mistral_key_from_env_file() -> Option<String> {
     None
 }
 
+#[cfg(windows)]
 fn mistral_key_from_os_keyring() -> Option<String> {
-    #[cfg(windows)]
-    {
-        return read_windows_vibe_credential();
-    }
-    #[cfg(not(windows))]
-    {
-        None
-    }
+    read_windows_vibe_credential()
+}
+
+#[cfg(not(windows))]
+fn mistral_key_from_os_keyring() -> Option<String> {
+    None
 }
 
 #[cfg(windows)]
@@ -131,7 +129,8 @@ fn read_windows_generic_credential(target: &str) -> Option<String> {
 
     // python-keyring writes Windows vault passwords as UTF-16. Keep UTF-8 as a
     // compatibility fallback for credentials written by other clients.
-    let looks_utf16 = bytes.len() % 2 == 0 && bytes.chunks_exact(2).any(|pair| pair[1] == 0);
+    let looks_utf16 =
+        bytes.len().is_multiple_of(2) && bytes.chunks_exact(2).any(|pair| pair[1] == 0);
     if looks_utf16 {
         let units: Vec<u16> = bytes
             .chunks_exact(2)
