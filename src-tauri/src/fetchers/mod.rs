@@ -332,7 +332,7 @@ pub fn summary_from_cache(cache: &CacheState, enabled: EnabledProviders) -> Usag
 pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSummary {
     use crate::models::{
         AntigravityService, ClaudeService, CodexService, CursorService, DeepSeekService,
-        GrokService, OpenCodeGoService,
+        GrokService, MistralService, OpenCodeGoService,
     };
 
     let enabled = config.enabled_providers;
@@ -392,6 +392,7 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
                     grok,
                     cursor,
                     antigravity,
+                    mistral,
                     opencodego,
                 },
                 enabled,
@@ -554,6 +555,7 @@ pub async fn collect_summary(config: &Config, cache: &mut CacheState) -> UsageSu
             grok,
             cursor,
             antigravity,
+            mistral,
             opencodego,
         },
         EnabledProviders {
@@ -703,6 +705,7 @@ mod tests {
             grok,
             cursor,
             antigravity,
+            mistral,
             opencodego,
         }
     }
