@@ -20,6 +20,7 @@
   --cursor: #9a85b8;
   --antigravity: #4d9cb0;
   --opencodego: #6fbf98;
+  --mistral: #e98239;
   --font: "Rajdhani", "Oswald", "Bahnschrift", "PingFang SC", "Microsoft YaHei",
     system-ui, sans-serif;
   --mono: "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
@@ -294,6 +295,10 @@ body {
 .panels[data-count="6"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.panels[data-count="8"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+}
 /* Seven cards (an unswitched X seat with everything on): four over three. */
 .panels[data-count="7"] {
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -307,18 +312,21 @@ body {
 }
 .panels[data-count="5"] .panel,
 .panels[data-count="6"] .panel,
-.panels[data-count="7"] .panel {
+.panels[data-count="7"] .panel,
+.panels[data-count="8"] .panel {
   min-height: 0;
   padding: 14px 16px;
 }
 .panels[data-count="5"] .panel-head,
 .panels[data-count="6"] .panel-head,
-.panels[data-count="7"] .panel-head {
+.panels[data-count="7"] .panel-head,
+.panels[data-count="8"] .panel-head {
   margin-bottom: 8px;
 }
 .panels[data-count="5"] .panel-title,
 .panels[data-count="6"] .panel-title,
-.panels[data-count="7"] .panel-title {
+.panels[data-count="7"] .panel-title,
+.panels[data-count="8"] .panel-title {
   font-size: 22px;
 }
 
@@ -397,6 +405,7 @@ body {
 .panel-cursor { --accent: var(--cursor); }
 .panel-antigravity { --accent: var(--antigravity); }
 .panel-opencodego { --accent: var(--opencodego); }
+.panel-mistral { --accent: var(--mistral); }
 
 .panel-edge {
   position: absolute;
@@ -939,12 +948,38 @@ body {
   width: min(480px, 100%);
   max-height: calc(100dvh - 40px);
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ok) 72%, var(--muted)) #05090d;
   border: 1px solid var(--line);
   border-top: 3px solid var(--ok);
   border-radius: 4px;
   background: #080d12;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.62);
   padding: 22px;
+}
+.settings-dialog::-webkit-scrollbar {
+  width: 10px;
+}
+.settings-dialog::-webkit-scrollbar-track {
+  background: #05090d;
+  border-left: 1px solid color-mix(in srgb, var(--ok) 12%, var(--line));
+}
+.settings-dialog::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ok) 88%, #d7eee3),
+      color-mix(in srgb, var(--ok) 48%, #31453d)
+    );
+  border: 2px solid #05090d;
+  border-radius: 999px;
+  min-height: 48px;
+}
+.settings-dialog::-webkit-scrollbar-thumb:hover {
+  background: var(--ok);
+}
+.settings-dialog::-webkit-scrollbar-corner {
+  background: #05090d;
 }
 .settings-head {
   display: flex;
@@ -1072,6 +1107,7 @@ body {
 .provider-option.provider-x { --provider-accent: var(--grok); }
 .provider-option.provider-antigravity { --provider-accent: var(--antigravity); }
 .provider-option.provider-opencodego { --provider-accent: var(--opencodego); }
+.provider-option.provider-mistral { --provider-accent: var(--mistral); }
 .performance-option { --provider-accent: var(--ok); }
 .provider-option:has(input:checked) {
   border-color: color-mix(in srgb, var(--provider-accent) 50%, transparent);
@@ -2446,11 +2482,13 @@ body {
 .dashboard[data-art="ip"] .provider-option.provider-x { background: #5B21FF; color: #fff8f0; }
 .dashboard[data-art="ip"] .provider-option.provider-antigravity { background: #149878; color: #121212; }
 .dashboard[data-art="ip"] .provider-option.provider-opencodego { background: #ECE6D8; color: #121212; }
+.dashboard[data-art="ip"] .provider-option.provider-mistral { background: #FF7000; color: #121212; }
 .dashboard[data-art="ip"] .provider-option.provider-codex .provider-name,
 .dashboard[data-art="ip"] .provider-option.provider-claude .provider-name,
 .dashboard[data-art="ip"] .provider-option.provider-deepseek .provider-name,
 .dashboard[data-art="ip"] .provider-option.provider-antigravity .provider-name,
-.dashboard[data-art="ip"] .provider-option.provider-opencodego .provider-name {
+.dashboard[data-art="ip"] .provider-option.provider-opencodego .provider-name,
+.dashboard[data-art="ip"] .provider-option.provider-mistral .provider-name {
   color: #121212;
 }
 .dashboard[data-art="ip"] .provider-option.provider-x .provider-name,
